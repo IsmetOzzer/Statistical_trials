@@ -1,6 +1,8 @@
 ---
-title: "Untitled"
-output: rmarkdown::github_document
+title: "Changing Anxiety Levels Depending on the Legitimacy of Information"
+output:
+  html_document:
+    keep_md: true
 ---
 
 ```{r setup, include=FALSE}
