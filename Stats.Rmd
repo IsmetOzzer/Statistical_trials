@@ -1,6 +1,6 @@
 ---
 title: "Untitled"
-output: github_document
+output: rmarkdown::github_document
 ---
 
 ```{r setup, include=FALSE}
@@ -14,36 +14,31 @@ library(QuantPsyc)
 library(car)
 library(pastecs)
 library(GGally)
-library(gganimate)
-library(datarium)
 library(ggpubr)
 ```
 
-## R Markdown
 
-In our everyday life we are bombarded with all kinds of infomation. Naturally, some of this information comes from legitimate sources (e.g. scientific articles or news agencies) and some of it isoverheard information from a person. Eventhough news worthy information is often fit for provoking anxiety, we don't know if it would be less or more anxiety evoking if we heard the information from someone we know instead.
+In our everyday life we are bombarded with all kinds of information. Naturally, some of this information comes from legitimate sources (e.g. scientific articles or news agencies) and some of it is overheard information from a person. Even though news worthy information is often fit for provoking anxiety, we don't know if it would be less or more anxiety evoking if we heard the information from someone we know instead.
 
 In this psychological experiment we tested just that! We created a text in which we talked about the possible catastrophic dangers of nuclear power plants as in what happens and happened in cases of explosions or leakages of such material. Later on, we presented this text in one of four groups; a legitimate news group, an overheard group, overheard from an expert group and a control group of just the text. In the legitimate news group, the text is presented with a headline, a date, a name for a reporter and a name for a news agency in order to make it look like a news article. In the overheard group, the text is presented in the perspective of a person who is causally talking about a date 
 
-For this experiment, we took the state (current) anxiety levels of participants as the response variable. Furthermore, we controlled for subjective levels of perceived everyday stress, depressive thougths, suicidal ideation and current relaxed state, in a manner to be appointed from 1 to 10 in a likert scale. In addition to that, we asked for demographic informations of sex, age, type of the governance in the district they lived in the most (e.g. city, town, etc.), their income level, drug or alcholol addiction, any medical or psychological condiiton that affects their thinking processes, and the level of information they had about nuclear power plants.  
+For this experiment, we took the state (current) anxiety levels of participants as the response variable. Furthermore, we controlled for subjective levels of perceived everyday stress, depressive thoughts, suicidal ideation and current relaxed state, in a manner to be appointed from 1 to 10 in a likert scale. In addition to that, we asked for demographic information of sex, age, type of the governance in the district they lived in the most (e.g. city, town, etc.), their income level, drug or alcohol addiction, any medical or psychological condition that affects their thinking processes, and the level of information they had about nuclear power plants.  
 
-#First, let's take a look at the data in a correlation matrix
+First, let's take a look at the data in a correlation matrix
 
 
 
 ```{r cars}
+deney <- read.csv("deney.csv", header = TRUE, stringsAsFactors = FALSE)
 
 Experiment <- deney %>% 
   dplyr::select(Grup, Toplam, Cinsiyet, Yaş, Enuzunşehir, GelirSeviye, Günlükstres, Alkol, Depresifdüşünce, İntihar, 
                 TıbbiSorun, PsikoSorun, İlaç, ŞuanRahat, SantralBilgi)
 
 Experiment <- Experiment %>% 
-  rename(Group= Grup, Anxiety = Toplam ,  Sex = Cinsiyet,  Age =Yaş ,  City= Enuzunşehir , Income=  GelirSeviye, 
-          Daily.Stress =Günlükstres , Alcholol.Add=  Alkol , Depressive.Thoughts=  Depresifdüşünce , Suicidal.Ideation= İntihar ,
-          Medical.Cond= TıbbiSorun ,  Psycho.Cond=PsikoSorun ,  Drug.Add=İlaç ,  Relaxed.AtM=ŞuanRahat , N.Power.Know= SantralBilgi)
+  rename(Group= Grup, Anxiety = Toplam ,  Sex = Cinsiyet,  Age =Yaş ,  City= Enuzunşehir , Income=  GelirSeviye, Daily.Stress =Günlükstres , Alcholol.Add=  Alkol , Depressive.Thoughts=  Depresifdüşünce , Suicidal.Ideation= İntihar , Medical.Cond= TıbbiSorun ,  Psycho.Cond=PsikoSorun ,  Drug.Add=İlaç ,  Relaxed.AtM=ŞuanRahat , N.Power.Know= SantralBilgi)
 
 ggcorr(Experiment, label = T)
-
 ```
 
 It seems like there are some variables which show almost no correlation with other variables (r < 0.3); Sex, age, alcohol addiction, medical condition and knowledge of nuclear power. 
@@ -67,7 +62,7 @@ Experiment1 <- Experiment %>%
   dplyr::select(Anxiety, Daily.Stress, Depressive.Thoughts, Suicidal.Ideation, Relaxed.AtM)
 ```
 
-#Before moving forward, lets check if there are any outliers among these variables.
+Before moving forward, lets check if there are any outliers among these variables.
 
 boxplot(Experiment1)
 ```{r}
@@ -96,7 +91,9 @@ It seems that the only variable that is not skewed or kurtosed is the Anxiety le
 Furthermore, the normtest.W and .p values give the results for Shapiro-Wilk normality test. Even though the p value indicates that the Anxiety data is non-normal, we should check the histogram since we have a lot of data.
 
 ```{r}
-Experiment1 %>% 
+Experiment$Group <- factor(Experiment$Group, levels = c(1,2,3,4))
+
+Experiment %>% 
   dplyr::select(Anxiety, Daily.Stress, Sex, Depressive.Thoughts, Relaxed.AtM,Group) %>%  
   ggpairs(mapping = ggplot2::aes(color = Group),
         lower = list(continuous = wrap("smooth", size = .9 ,position = "jitter", se = F, method = "rlm")),
@@ -135,7 +132,7 @@ Experiment1$Gruop <- factor(Experiment1$Group, labels = c("Legit", "OHeard", "LO
 
 ```
 
-Let's get a bit fancy and plot boxplot's with ANOVA results 
+Let's get a bit fancy and plot boxplots with ANOVA results 
 
 ```{r}
 ggboxplot(Experiment1, "Group", "Anxiety", add = c("jitter", "mean"), color = "Group") + 
