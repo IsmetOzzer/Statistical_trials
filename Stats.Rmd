@@ -50,7 +50,7 @@ Before going any further, lets clean the data and take out participants who have
 
 
 
-```{r pressure, echo=FALSE}
+```{r}
 Experiment <- subset(Experiment, Experiment$Alcholol.Add == 2)
 Experiment <- subset(Experiment, Experiment$Drug.Add == 2)
 Experiment <- subset(Experiment, Experiment$Medical.Cond == 2)
