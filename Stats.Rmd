@@ -1,0 +1,167 @@
+---
+title: "Untitled"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(dplyr)
+library(readr)
+library(tidyr)
+library(ggplot2)
+library(QuantPsyc)
+library(car)
+library(pastecs)
+library(GGally)
+library(gganimate)
+library(datarium)
+library(ggpubr)
+```
+
+## R Markdown
+
+In our everyday life we are bombarded with all kinds of infomation. Naturally, some of this information comes from legitimate sources (e.g. scientific articles or news agencies) and some of it isoverheard information from a person. Eventhough news worthy information is often fit for provoking anxiety, we don't know if it would be less or more anxiety evoking if we heard the information from someone we know instead.
+
+In this psychological experiment we tested just that! We created a text in which we talked about the possible catastrophic dangers of nuclear power plants as in what happens and happened in cases of explosions or leakages of such material. Later on, we presented this text in one of four groups; a legitimate news group, an overheard group, overheard from an expert group and a control group of just the text. In the legitimate news group, the text is presented with a headline, a date, a name for a reporter and a name for a news agency in order to make it look like a news article. In the overheard group, the text is presented in the perspective of a person who is causally talking about a date 
+
+For this experiment, we took the state (current) anxiety levels of participants as the response variable. Furthermore, we controlled for subjective levels of perceived everyday stress, depressive thougths, suicidal ideation and current relaxed state, in a manner to be appointed from 1 to 10 in a likert scale. In addition to that, we asked for demographic informations of sex, age, type of the governance in the district they lived in the most (e.g. city, town, etc.), their income level, drug or alcholol addiction, any medical or psychological condiiton that affects their thinking processes, and the level of information they had about nuclear power plants.  
+
+#First, let's take a look at the data in a correlation matrix
+
+
+
+```{r cars}
+
+Experiment <- deney %>% 
+  dplyr::select(Grup, Toplam, Cinsiyet, Yaş, Enuzunşehir, GelirSeviye, Günlükstres, Alkol, Depresifdüşünce, İntihar, 
+                TıbbiSorun, PsikoSorun, İlaç, ŞuanRahat, SantralBilgi)
+
+Experiment <- Experiment %>% 
+  rename(Group= Grup, Anxiety = Toplam ,  Sex = Cinsiyet,  Age =Yaş ,  City= Enuzunşehir , Income=  GelirSeviye, 
+          Daily.Stress =Günlükstres , Alcholol.Add=  Alkol , Depressive.Thoughts=  Depresifdüşünce , Suicidal.Ideation= İntihar ,
+          Medical.Cond= TıbbiSorun ,  Psycho.Cond=PsikoSorun ,  Drug.Add=İlaç ,  Relaxed.AtM=ŞuanRahat , N.Power.Know= SantralBilgi)
+
+ggcorr(Experiment, label = T)
+
+```
+
+It seems like there are some variables which show almost no correlation with other variables (r < 0.3); Sex, age, alcohol addiction, medical condition and knowledge of nuclear power. 
+So, let's just take them out from future analyses. 
+
+Before going any further, lets clean the data and take out participants who have an alcohol/drug addiction and a medical/psychological condition.
+
+
+
+```{r pressure, echo=FALSE}
+Experiment <- subset(Experiment, Experiment$Alcholol.Add == 2)
+Experiment <- subset(Experiment, Experiment$Drug.Add == 2)
+Experiment <- subset(Experiment, Experiment$Medical.Cond == 2)
+Experiment <- subset(Experiment, Experiment$Psycho.Cond == 2)
+```
+
+Now, in order to look at some descriptive statistics, we'll create a data frame with only the related continious variables
+
+```{r}
+Experiment1 <- Experiment %>% 
+  dplyr::select(Anxiety, Daily.Stress, Depressive.Thoughts, Suicidal.Ideation, Relaxed.AtM)
+```
+
+#Before moving forward, lets check if there are any outliers among these variables.
+
+boxplot(Experiment1)
+```{r}
+boxplot(Experiment1)
+```
+
+It seems that only the suicidal ideation variable has many outliers but since we collected data from students, it is expected for most students to have low level of suicidal thoughts; these outliers are not random and exist for a reason. Therefore, it is appropirate to keep the variable as it is.
+
+Now, Let's look at a more clean correlation matrix 
+
+```{r}
+ggcorr(Experiment1, label = T)
+```
+
+Lets continue with some descriptive statistics
+
+```{r}
+stat.desc(Experiment1, basic = F, norm=T)
+
+```
+
+We can see some stats such as mean and standard deviation. The values for skew.2SE and kurt.2SE gives the skewness and kurtosis values divided by 2 standard errors.
+
+It seems that the only variable that is not skewed or kurtosed is the Anxiety levels. All the other variables are have above +/-1 values. 
+
+Furthermore, the normtest.W and .p values give the results for Shapiro-Wilk normality test. Even though the p value indicates that the Anxiety data is non-normal, we should check the histogram since we have a lot of data.
+
+```{r}
+Experiment1 %>% 
+  dplyr::select(Anxiety, Daily.Stress, Sex, Depressive.Thoughts, Relaxed.AtM,Group) %>%  
+  ggpairs(mapping = ggplot2::aes(color = Group),
+        lower = list(continuous = wrap("smooth", size = .9 ,position = "jitter", se = F, method = "rlm")),
+        diag = list(continuous = wrap("densityDiag", alpha = .3))) + theme(legend.position = "bottom")
+
+```
+
+Let's take a look at the data format
+
+```{r}
+str(Experiment1)
+
+```
+
+Data needs to be in a right format!
+
+
+```{r}
+Experiment1$Sex <- factor(Experiment$Sex, levels = c(1,2))
+Experiment1$Group <- factor(Experiment$Group, levels = c(1,2,3,4))
+Experiment1$Income <- factor(Experiment$Income, levels = c(1,2,3,4),
+                            ordered = TRUE)
+Experiment1$City <- factor(Experiment$City, levels = c(1,2,3,4),
+                            ordered = TRUE)
+Experiment1$Suicidal.Ideation <- factor(Experiment$Suicidal.Ideation, levels = c(1:10), 
+                        ordered = TRUE)
+```
+
+While we're at it, lets give clear names for groups
+Legit = Legitimate information 
+OHeard = Overheard information 
+LOHeard = overheard from an expert 
+
+```{r}
+Experiment1$Gruop <- factor(Experiment1$Group, labels = c("Legit", "OHeard", "LOHeard", "Control"))
+
+```
+
+Let's get a bit fancy and plot boxplot's with ANOVA results 
+
+```{r}
+ggboxplot(Experiment1, "Group", "Anxiety", add = c("jitter", "mean"), color = "Group") + 
+  stat_compare_means(method = "anova", label.y = 75) + 
+  stat_compare_means(comparisons = list(c("Legit", "OHeard"),
+                                        c("OHeard", "LOHeard"),
+                                        c("LOHeard", "Control"),
+                                        c("Legit", "LOHeard"),
+                                        c("OHeard", "Control"),
+                                        c("Legit", "Control")), method = "t.test") + 
+  theme(legend.position = "none") +
+  labs(y = "Anxiety Levels") +  
+  annotate("text",x=1,y=18,label="n=39") + 
+  annotate("text",x=2,y=18,label="n=42") + 
+  annotate("text",x=3,y=18,label="n=49") + 
+  annotate("text",x=4,y=18,label="n=41") 
+
+```
+
+```{r}
+ggbarplot(Experiment1, x = "Group", y = "Anxiety", 
+          add = c("mean_se", "jitter"), color = "Group") + 
+  theme(legend.position = "none") + 
+  stat_compare_means(method = "anova", label.y = 63) + 
+  stat_compare_means(comparisons = list(c("Legit", "OHeard")), 
+                     method = "t.test", label = "p.signif") +
+  annotate("text", x = 1.5, y = 70, label = "t-test")
+```
+
