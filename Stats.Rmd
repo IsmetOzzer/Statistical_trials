@@ -30,7 +30,7 @@ First, let's take a look at the data in a correlation matrix
 
 
 
-```{r cars}
+```{r}
 deney <- read.csv("deney.csv", header = TRUE, stringsAsFactors = FALSE)
 
 Experiment <- deney %>% 
